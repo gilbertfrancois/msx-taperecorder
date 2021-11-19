@@ -190,3 +190,15 @@ tags
 [._]*.un~
 
 bin/glass.jar
+*.wav
+*.cas
+/3rdparty/castools/wav2cas
+/3rdparty/castools/cpu
+/3rdparty/castools/casdir
+/3rdparty/castools/cas2wav
+.venv
+/bin/wav2cas
+/bin/cpu
+/bin/casdir
+/bin/cas2wav
+__pycache__
