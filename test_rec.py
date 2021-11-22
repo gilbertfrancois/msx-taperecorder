@@ -8,6 +8,7 @@ import argparse
 import tempfile
 import queue
 import sys
+import cv2 as cv
 
 import sounddevice as sd
 import soundfile as sf
