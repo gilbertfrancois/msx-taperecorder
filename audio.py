@@ -1,28 +1,30 @@
 import threading
 import tempfile
 import sys
-import time
 import logging
+from typing import Optional
 
 import sounddevice as sd
 import soundfile as sf
-import numpy  # Make sure NumPy is loaded before it is used in the callback
-assert numpy  # avoid "imported but unused" message (W0611)
+import numpy as np  # Make sure NumPy is loaded before it is used in the callback
+assert np           # avoid "imported but unused" message (W0611)
 from queue import Queue
 
 log = logging.getLogger(__name__)
 
 q = Queue()
 
-def callback(indata, frames, time, status):
-    """This is called (from a separate thread) for each audio block."""
+def callback(indata: np.ndarray, frames: int, time, status: sd.CallbackFlags) -> None:
+    """ This is called (from a separate thread) for each audio block.
+
+    """
     if status:
-        print(status, file=sys.stderr)
+        log.info(status, file=sys.stderr)
     q.put(indata.copy())
 
 
 class DataRecorder(threading.Thread):
-    def __init__(self, device, samplerate, n_channels, filename):
+    def __init__(self, device: int, samplerate: Optional[int], n_channels: int, filename: Optional[str]):
         super().__init__()
         self.is_running = False
         self.device = device
@@ -44,7 +46,7 @@ class DataRecorder(threading.Thread):
         if self.samplerate is None:
             self.get_default_samplerate()
         if self.filename is None:
-            self.filename = tempfile.mktemp(prefix='delme_rec_unlimited_', suffix='.wav', dir='')
+            self.filename = tempfile.mktemp(prefix='delete_me_', suffix='.wav', dir='')
 
         with sf.SoundFile(self.filename, mode='x', samplerate=self.samplerate, channels=self.n_channels, subtype=self.subtype) as file:
             with sd.InputStream(samplerate=self.samplerate, device=self.device, channels=self.n_channels, callback=callback):
