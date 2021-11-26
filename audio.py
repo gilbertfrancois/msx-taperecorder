@@ -1,6 +1,5 @@
 import threading
 import tempfile
-import sys
 import logging
 from typing import Optional
 
@@ -12,16 +11,6 @@ from queue import Queue
 
 log = logging.getLogger(__name__)
 
-q = Queue()
-
-def callback(indata: np.ndarray, frames: int, time, status: sd.CallbackFlags) -> None:
-    """ This is called (from a separate thread) for each audio block.
-
-    """
-    if status:
-        log.info(status, file=sys.stderr)
-    q.put(indata.copy())
-
 
 class DataRecorder(threading.Thread):
     def __init__(self, device: int, samplerate: Optional[int], n_channels: int, filename: Optional[str]):
@@ -32,6 +21,7 @@ class DataRecorder(threading.Thread):
         self.n_channels = n_channels
         self.filename = filename
         self.subtype = "PCM_24"
+        self.q_rec = Queue()
 
     def start(self):
         log.info(f"Start recording.")
@@ -49,10 +39,16 @@ class DataRecorder(threading.Thread):
             self.filename = tempfile.mktemp(prefix='delete_me_', suffix='.wav', dir='')
 
         with sf.SoundFile(self.filename, mode='x', samplerate=self.samplerate, channels=self.n_channels, subtype=self.subtype) as file:
-            with sd.InputStream(samplerate=self.samplerate, device=self.device, channels=self.n_channels, callback=callback):
+            with sd.InputStream(samplerate=self.samplerate, device=self.device, channels=self.n_channels, callback=self.callback_rec):
                 log.info(f"Using filename {self.filename}.")
                 while self.is_running:
-                    file.write(q.get())
+                    file.write(self.q_rec.get())
+
+    def callback_rec(self, indata: np.ndarray, frames: int, time, status: sd.CallbackFlags) -> None:
+        if status:
+            log.info(status)
+        log.info(indata.shape)
+        self.q_rec.put(indata.copy())
 
 
     def query_devices(self):
@@ -66,3 +62,5 @@ class DataRecorder(threading.Thread):
             self.samplerate = int(self.samplerate)
         else:
             raise RuntimeError(f"Could not determine sample rate from device {self.device}.")
+        
+

@@ -4,6 +4,7 @@ gf_logging.setup_logging()
 import time
 import gf_lib
 from audio import DataRecorder
+from dataplayer import DataPlayer
 
 
 if __name__ == "__main__":
@@ -13,4 +14,16 @@ if __name__ == "__main__":
     dr.start()
     time.sleep(5)
     dr.stop()
+    
+    # dp = DataPlayer(device=1, filename="sample0.wav")
+    # dp.start()
+    # time.sleep(3)
+    # dp.stop()
+    # del dp
+    # time.sleep(1)
 
+#     dp = DataPlayer(device=1, filename="sample2.wav")
+#     dp.start()
+#     time.sleep(2)
+#     dp.stop()
+#     del dp
