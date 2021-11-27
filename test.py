@@ -3,7 +3,7 @@ gf_logging.setup_logging()
 
 import time
 import gf_lib
-from audio import DataRecorder
+from datarecorder import DataRecorder
 from dataplayer import DataPlayer
 
 
