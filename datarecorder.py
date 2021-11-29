@@ -9,11 +9,9 @@ import numpy as np  # Make sure NumPy is loaded before it is used in the callbac
 assert np           # avoid "imported but unused" message (W0611)
 from queue import Queue
 
-log = logging.getLogger(__name__)
-
 
 class DataRecorder(threading.Thread):
-    def __init__(self, device: int, samplerate: Optional[int], n_channels: int, filename: Optional[str]):
+    def __init__(self, device: int, samplerate: Optional[int], n_channels: int, filename: Optional[str], logger=None):
         super().__init__()
         self.is_running = False
         self.device = device
@@ -22,15 +20,24 @@ class DataRecorder(threading.Thread):
         self.filename = filename
         self.subtype = "PCM_24"
         self.q_rec = Queue()
+        if logger is not None:
+            self.logger = logger
+        else:
+            self.logger = logging.getLogger(__name__)
+
+    def __del__(self):
+        self.stop()
 
     def start(self):
-        log.info(f"Start recording.")
+        self.logger.info(f"DataRecorder: Start recording.")
         self.is_running = True
         super().start()
 
     def stop(self):
-        log.info(f"Stop recording.")
+        self.logger.info(f"DataRecorder: Stop recording.")
         self.is_running = False
+        if self.is_alive():
+            self.join()
         
     def run(self):
         if self.samplerate is None:
@@ -39,21 +46,22 @@ class DataRecorder(threading.Thread):
             self.filename = tempfile.mktemp(prefix='delete_me_', suffix='.wav', dir='')
 
         with sf.SoundFile(self.filename, mode='x', samplerate=self.samplerate, channels=self.n_channels, subtype=self.subtype) as file:
-            with sd.InputStream(samplerate=self.samplerate, device=self.device, channels=self.n_channels, callback=self.callback_rec):
-                log.info(f"Using filename {self.filename}.")
+        #     with sd.InputStream(samplerate=self.samplerate, device=self.device, channels=self.n_channels, callback=self.callback_rec):
+        # with sf.SoundFile(self.filename, mode='x', samplerate=self.samplerate, subtype=self.subtype) as file:
+            with sd.InputStream(samplerate=self.samplerate, device=self.device, callback=self.callback_rec):
+                self.logger.info(f"DataRecorder: Using filename {self.filename}.")
                 while self.is_running:
                     file.write(self.q_rec.get())
 
     def callback_rec(self, indata: np.ndarray, frames: int, time, status: sd.CallbackFlags) -> None:
         if status:
-            log.info(status)
-        log.info(indata.shape)
+            self.logger.info(status)
+        self.logger.info(indata.shape)
         self.q_rec.put(indata.copy())
 
-
     def query_devices(self):
-        log.info(sd.query_devices())
-        log.info(sd.query_devices(0, kind="input"))
+        self.logger.info(f"DataRecorder: \nAll devices\n{sd.query_devices()}")
+        self.logger.info(f"DataRecorder: \nInput devices:\n{sd.query_devices(0, kind='input')}")
 
     def get_default_samplerate(self):
         device_info = sd.query_devices(self.device, "input")
@@ -62,5 +70,3 @@ class DataRecorder(threading.Thread):
             self.samplerate = int(self.samplerate)
         else:
             raise RuntimeError(f"Could not determine sample rate from device {self.device}.")
-        
-

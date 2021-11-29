@@ -1,0 +1,59 @@
+<Button>
+    font_size: 48
+
+<BackgroundColor@Widget>
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+            
+<BackgroundLabel@Label+BackgroundColor>
+    background_color: 0, 0, 0, 0
+
+<MainWindow>
+    id: mainwindow
+    BoxLayout:
+        orientation: "vertical"
+        size: root.width, root.height
+
+        BoxLayout:
+            size_hint: (1.0, 0.7)
+            orientation: "vertical"
+            FileChooserIconView:
+                id: filechooser
+                rootpath: "."
+                filters: ["*.cas", "*.wav"]
+                size_hint: (1.0, 1.0)
+                on_selection: mainwindow.selected(filechooser.selection)
+            BackgroundLabel:
+                id: status_label
+                text: "Ready..."
+                multiline: False
+                font_size: 32
+                size_hint: (1.0, None)
+                height: 40
+                text_size: self.size
+                halign: "left"
+                valign: "middle"
+                background_color: (0.1, 0.1, 0.1, 1.0)
+
+        BoxLayout: 
+            orientation: "horizontal"
+            size_hint: (1.0, 0.3)
+            Button:
+                id: button_rec
+                text: "REC"
+                on_press: mainwindow.on_press_record()
+            Button:
+                id: button_play
+                text: "PLAY"
+                on_press: mainwindow.on_press_play()
+            Button:
+                id: button_stop
+                text: "STOP"
+                on_press: mainwindow.on_press_stop()
+
+
