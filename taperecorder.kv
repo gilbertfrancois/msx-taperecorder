@@ -43,13 +43,15 @@
         BoxLayout: 
             orientation: "horizontal"
             size_hint: (1.0, 0.3)
-            Button:
+            ToggleButton:
                 id: button_rec
                 text: "REC"
+                state: "normal"
                 on_press: mainwindow.on_press_record()
-            Button:
+            ToggleButton:
                 id: button_play
                 text: "PLAY"
+                state: "normal"
                 on_press: mainwindow.on_press_play()
             Button:
                 id: button_stop

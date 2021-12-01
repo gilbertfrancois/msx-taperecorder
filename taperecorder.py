@@ -19,8 +19,8 @@ class MainWindow(Widget):
     def __init__(self):
         Logger.info(f"MainWindow: __init__()")
         super().__init__()
-        self.input_device = 2
-        self.output_device = 2
+        self.input_device = 1
+        self.output_device = 1
         self.set_2400 = False
         self.play_filepath:Optional[str] = None
         self.rec_filepath:Optional[str] = None
@@ -34,6 +34,7 @@ class MainWindow(Widget):
         self.cas2wav = os.path.join(self.app_folder, "bin", "cas2wav")
         self.wav2cas = os.path.join(self.app_folder, "bin", "wav2cas")
         Clock.schedule_interval(self.ids.filechooser._update_files, 1.0)
+        Clock.schedule_interval(self.check_dataplayer_status, 0.3)
 
     def __del__(self):
         Logger.info(f"MainWindow: __del__()")
@@ -51,9 +52,11 @@ class MainWindow(Widget):
 
     def on_press_record(self):
         Logger.info(f"MainWindow: on_press_record()")
+        time.sleep(0.2)
         self.stop_dataplayer()
         self.stop_datarecorder()
         self.rec_filepath = os.path.join(self.ids.filechooser.path, f"rec_{str(int(time.time()))}.wav")
+        self.ids.button_rec.state = "down"
         self.datarecorder = DataRecorder(device=self.input_device, samplerate=None, n_channels=1, filename=self.rec_filepath)
         self.datarecorder.start()
         self.ids.filechooser._update_files()
@@ -75,13 +78,16 @@ class MainWindow(Widget):
         self.convert_cas_to_wav(self.play_filepath)
         self.stop_dataplayer()
         self.stop_datarecorder()
+        self.ids.button_play.state = "down"
         self.dataplayer = DataPlayer(device=self.output_device, filename=self.play_filepath, logger=Logger)
         self.dataplayer.start()
 
     def on_press_stop(self):
         Logger.info(f"MainWindow: on_press_stop()")
         self.stop_dataplayer()
+        self.ids.button_play.state = "normal"
         self.stop_datarecorder()
+        self.ids.button_rec.state = "normal"
         self.ids.filechooser._update_files()
 
     def stop_dataplayer(self):
@@ -97,6 +103,14 @@ class MainWindow(Widget):
                 self.rename_to_msx_filename(self.rec_filepath)
             self.rec_filepath = None
         self.ids.filechooser._update_files()
+
+    def check_dataplayer_status(self, a):
+        if self.dataplayer is not None and self.dataplayer.is_running:
+            self.ids.button_play.state = "down"
+        else:
+            self.ids.button_play.state = "normal"
+
+
 
     def query_devices(self):
         Logger.info(f"DataRecorder: \nAll devices\n{sd.query_devices()}")
@@ -191,6 +205,8 @@ class TapeRecorderApp(App):
         return MainWindow()
 
 if __name__ == "__main__":
-    Config.set('graphics', 'width', '800')
-    Config.set('graphics', 'height', '480')
+    # Config.set('graphics', 'width', '800')
+    # Config.set('graphics', 'height', '480')
+    Config.set('graphics', 'fullscreen', 'auto')
     TapeRecorderApp().run()
+
