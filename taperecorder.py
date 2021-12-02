@@ -1,7 +1,5 @@
-import logging
 import time
 import os
-import shutil
 from typing import Optional
 
 from kivy.app import App
@@ -52,7 +50,6 @@ class MainWindow(Widget):
 
     def on_press_record(self):
         Logger.info(f"MainWindow: on_press_record()")
-        time.sleep(0.2)
         self.stop_dataplayer()
         self.stop_datarecorder()
         self.rec_filepath = os.path.join(self.ids.filechooser.path, f"rec_{str(int(time.time()))}.wav")
@@ -75,7 +72,7 @@ class MainWindow(Widget):
         if self.play_filepath is None:
             self.ids.status_label.text = "No file selected."
             return
-        self.convert_cas_to_wav(self.play_filepath)
+        self.play_filepath = self.convert_cas_to_wav(self.play_filepath)
         self.stop_dataplayer()
         self.stop_datarecorder()
         self.ids.button_play.state = "down"
@@ -85,10 +82,10 @@ class MainWindow(Widget):
     def on_press_stop(self):
         Logger.info(f"MainWindow: on_press_stop()")
         self.stop_dataplayer()
-        self.ids.button_play.state = "normal"
         self.stop_datarecorder()
-        self.ids.button_rec.state = "normal"
         self.ids.filechooser._update_files()
+        self.ids.button_play.state = "normal"
+        self.ids.button_rec.state = "normal"
 
     def stop_dataplayer(self):
         if self.dataplayer is not None:
@@ -102,15 +99,12 @@ class MainWindow(Widget):
             if self.rec_filepath is not None:
                 self.rename_to_msx_filename(self.rec_filepath)
             self.rec_filepath = None
-        self.ids.filechooser._update_files()
 
     def check_dataplayer_status(self, a):
-        if self.dataplayer is not None and self.dataplayer.is_running:
+        if self.dataplayer is not None and self.dataplayer.is_alive():
             self.ids.button_play.state = "down"
         else:
             self.ids.button_play.state = "normal"
-
-
 
     def query_devices(self):
         Logger.info(f"DataRecorder: \nAll devices\n{sd.query_devices()}")
@@ -154,7 +148,10 @@ class MainWindow(Widget):
             raise RuntimeError("Unsupported file type.")
 
     def get_msx_filename_from_cas(self, cas_filepath):
-        cas_header = b'\x1f\xa6\xde\xba\xcc\x13}t'
+        cas_header = b"\x1f\xa6\xde\xba\xcc\x13\x7d\x74"
+        cas_ascii  = b"\xea\xea\xea\xea\xea\xea\xea\xea\xea\xea"
+        cas_bin    = b"\xd0\xd0\xd0\xd0\xd0\xd0\xd0\xd0\xd0\xd0"
+        cas_basic  = b"\xd3\xd3\xd3\xd3\xd3\xd3\xd3\xd3\xd3\xd3"
         data = None
         with open(cas_filepath, "rb") as fp:
             data = fp.read()
@@ -175,8 +172,9 @@ class MainWindow(Widget):
                         Logger.info(f"MainWindow: msx filename is empty. Keeping tmp filename.")
                     else:
                         Logger.info(f"MainWindow: Found msx filename: {msx_filename}")
-                except:
+                except Exception as e:
                     Logger.error(f"MainWindow: Invalid or unknown CAS format.")
+                    Logger.exception(e)
                 return msx_filename
 
     def rename_to_msx_filename(self, wav_filepath, delete_cas_file=True):
@@ -205,8 +203,8 @@ class TapeRecorderApp(App):
         return MainWindow()
 
 if __name__ == "__main__":
-    # Config.set('graphics', 'width', '800')
-    # Config.set('graphics', 'height', '480')
-    Config.set('graphics', 'fullscreen', 'auto')
+    Config.set('graphics', 'width', '800')
+    Config.set('graphics', 'height', '480')
+    # Config.set('graphics', 'fullscreen', 'auto')
     TapeRecorderApp().run()
 

@@ -55,8 +55,7 @@ class DataRecorder(threading.Thread):
 
     def callback_rec(self, indata: np.ndarray, frames: int, time, status: sd.CallbackFlags) -> None:
         if status:
-            self.logger.info(status)
-        self.logger.info(indata.shape)
+            self.logger.warning(status)
         self.q_rec.put(indata.copy())
 
     def query_devices(self):

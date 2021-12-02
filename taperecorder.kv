@@ -28,17 +28,24 @@
                 filters: ["*.cas", "*.wav"]
                 size_hint: (1.0, 1.0)
                 on_selection: mainwindow.selected(filechooser.selection)
-            BackgroundLabel:
-                id: status_label
-                text: "Ready..."
-                multiline: False
-                font_size: 32
+            ProgressBar:
+                id: progressbar
                 size_hint: (1.0, None)
                 height: 40
-                text_size: self.size
-                halign: "left"
-                valign: "middle"
-                background_color: (0.1, 0.1, 0.1, 1.0)
+                max: 100
+                value: 40
+
+            #BackgroundLabel:
+                #id: status_label
+                #text: "Ready..."
+                #multiline: False
+                #font_size: 32
+                #size_hint: (1.0, None)
+                #height: 40
+                #text_size: self.size
+                #halign: "left"
+                #valign: "middle"
+                #background_color: (0.1, 0.1, 0.1, 1.0)
 
         BoxLayout: 
             orientation: "horizontal"
