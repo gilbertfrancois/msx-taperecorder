@@ -70,7 +70,7 @@ class MainWindow(Widget):
     def on_press_play(self):
         Logger.info(f"MainWindow: on_press_play()")
         if self.play_filepath is None:
-            self.ids.status_label.text = "No file selected."
+            # self.ids.status_label.text = "No file selected."
             return
         self.play_filepath = self.convert_cas_to_wav(self.play_filepath)
         self.stop_dataplayer()
@@ -159,7 +159,7 @@ class MainWindow(Widget):
             idx = data.find(cas_header)
             if idx == -1:
                 message = f"No CAS header found in {os.path.basename(cas_filepath)}"
-                self.ids.status_label.text = message
+                # self.ids.status_label.text = message
                 Logger.error(f"MainWindow: {message}.")
                 return None
             else:
@@ -203,8 +203,8 @@ class TapeRecorderApp(App):
         return MainWindow()
 
 if __name__ == "__main__":
-    Config.set('graphics', 'width', '800')
-    Config.set('graphics', 'height', '480')
-    # Config.set('graphics', 'fullscreen', 'auto')
+    # Config.set('graphics', 'width', '800')
+    # Config.set('graphics', 'height', '480')
+    Config.set('graphics', 'fullscreen', 'auto')
     TapeRecorderApp().run()
 

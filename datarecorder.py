@@ -17,9 +17,11 @@ class DataRecorder(threading.Thread):
         self.device = device
         self.samplerate = samplerate
         self.n_channels = n_channels
+        self.buffersize = 20
+        self.blocksize = 2048
         self.filename = filename
         self.subtype = "PCM_24"
-        self.q_rec = Queue()
+        self.q_rec = Queue(self.buffersize)
         if logger is not None:
             self.logger = logger
         else:
@@ -46,14 +48,13 @@ class DataRecorder(threading.Thread):
             self.filename = tempfile.mktemp(prefix='delete_me_', suffix='.wav', dir='')
 
         with sf.SoundFile(self.filename, mode='x', samplerate=self.samplerate, channels=self.n_channels, subtype=self.subtype) as file:
-        #     with sd.InputStream(samplerate=self.samplerate, device=self.device, channels=self.n_channels, callback=self.callback_rec):
-        # with sf.SoundFile(self.filename, mode='x', samplerate=self.samplerate, subtype=self.subtype) as file:
-            with sd.InputStream(samplerate=self.samplerate, device=self.device, callback=self.callback_rec):
+            with sd.InputStream(samplerate=self.samplerate, blocksize=self.blocksize, device=self.device, callback=self.callback_rec):
                 self.logger.info(f"DataRecorder: Using filename {self.filename}.")
                 while self.is_running:
                     file.write(self.q_rec.get())
 
     def callback_rec(self, indata: np.ndarray, frames: int, time, status: sd.CallbackFlags) -> None:
+        print(frames)
         if status:
             self.logger.warning(status)
         self.q_rec.put(indata.copy())
