@@ -11,6 +11,8 @@ from kivy.clock import Clock
 from datarecorder import DataRecorder
 from dataplayer import DataPlayer
 import sounddevice as sd
+import soundfile as sf
+import numpy as np
 
 class MainWindow(Widget):
 
@@ -31,7 +33,7 @@ class MainWindow(Widget):
         self.app_folder = os.path.dirname(os.path.realpath(__file__))
         self.cas2wav = os.path.join(self.app_folder, "bin", "cas2wav")
         self.wav2cas = os.path.join(self.app_folder, "bin", "wav2cas")
-        Clock.schedule_interval(self.ids.filechooser._update_files, 1.0)
+        # Clock.schedule_interval(self.ids.filechooser._update_files, 1.0)
         Clock.schedule_interval(self.check_dataplayer_status, 0.3)
 
     def __del__(self):
@@ -91,18 +93,21 @@ class MainWindow(Widget):
         if self.dataplayer is not None:
             self.dataplayer.stop()
             self.dataplayer = None
+        self.ids.progressbar.value = 0
     
     def stop_datarecorder(self):
         if self.datarecorder is not None:
             self.datarecorder.stop()
             self.datarecorder = None
-            if self.rec_filepath is not None:
+            if self.rec_filepath is not None and os.path.exists(self.rec_filepath):
+                self.normalize_recording(self.rec_filepath)
                 self.rename_to_msx_filename(self.rec_filepath)
             self.rec_filepath = None
 
     def check_dataplayer_status(self, a):
         if self.dataplayer is not None and self.dataplayer.is_alive():
             self.ids.button_play.state = "down"
+            self.ids.progressbar.value = self.dataplayer.progress
         else:
             self.ids.button_play.state = "normal"
 
@@ -194,6 +199,17 @@ class MainWindow(Widget):
         self.ids.filechooser._update_files()
         return msx_filepath
 
+    def normalize_recording(self, filename):
+        data, samplerate = sf.read(filename, always_2d=True, dtype="float32")
+        Logger.info(f"min: {np.min(data):0.3f}, max: {np.max(data):0.3f}, mu: {np.mean(data):0.3f}, sigma: {np.std(data):0.3f}")
+        h_amp = np.std(data)*1.58979
+        factor = 0.50 / h_amp
+        data = data * factor
+        os.remove(filename)
+        sf.write(filename, data, samplerate, subtype="PCM_24")
+        Logger.info(f"min: {np.min(data):0.3f}, max: {np.max(data):0.3f}, mu: {np.mean(data):0.3f}, sigma: {np.std(data):0.3f}")
+        Logger.info(f"Normalized {filename}.")
+
     def callback_dataplayer(self):
         self.stop_dataplayer()
 
@@ -203,8 +219,8 @@ class TapeRecorderApp(App):
         return MainWindow()
 
 if __name__ == "__main__":
-    # Config.set('graphics', 'width', '800')
-    # Config.set('graphics', 'height', '480')
-    Config.set('graphics', 'fullscreen', 'auto')
+    Config.set('graphics', 'width', '800')
+    Config.set('graphics', 'height', '480')
+    # Config.set('graphics', 'fullscreen', 'auto')
     TapeRecorderApp().run()
 
